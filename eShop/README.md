@@ -25,7 +25,7 @@ This project framework provides the following features:
 
 ### Quickstart
 
-1. git clone [repository clone url]
+1. git clone https://github.com/Azure-Samples/azure-cache-redis-demos.git
 2. cd eShop
 3. dotnet user-secrets init
 4. dotnet user-secrets set "ConnectionStrings:eShopRedisConnection" "your_cache_connectionstring"

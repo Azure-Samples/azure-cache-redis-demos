@@ -1,57 +1,44 @@
-# Project Name
+---
+page_type: demo
+languages:
+- aspnetcore-csharp
+name: Azure Cache for Redis demos
+description: Learn how to use Azure Cache for cache-aside, session state, data store, and integration with other Azure services.
+products:
+- azure
+- aspnet-core
+- dotnet
+- azure-cache-redis
+- web-apps
+- entity-framework
+---
 
-(short, 1-3 sentenced, description of the project)
+# Demos repository for Azure Cache for Redis
 
-## Features
+This repository contains demos for best practices in various application scenarios. To find out more about the Azure Cache for Redis service, please visit the [documentation site](https://learn.microsoft.com/azure/azure-cache-for-redis/).
 
-This project framework provides the following features:
+## Get the demos
 
-* Feature 1
-* Feature 2
-* ...
+- The easiest way to use these samples without using Git is to download the current version as a [ZIP file](https://github.com/Azure-Samples/azure-cache-redis-demos/archive/refs/heads/main.zip).
 
-## Getting Started
+  - On Windows, before you unzip the archive, right-click it, select **Properties**, and then select **Unblock**.
+  - Be sure to unzip the entire archive and not just individual demos.
 
-### Prerequisites
+- Alternatively, clone this demo repository using a Git client.
 
-(ideally very short, if any)
+## Build and run the demos
 
-- OS
-- Library version
-- ...
+Please see the description of each individual demo for instructions on how to build and run it.
 
-### Installation
+### Azure Cache for Redis demos
 
-(ideally very short)
-
-- npm install [package name]
-- mvn install
-- ...
-
-### Quickstart
-(Add steps to get up and running quickly)
-
-1. git clone [repository clone url]
-2. cd [repository name]
-3. ...
+The following demos show how to use Azure Cache for Redis to accelerate application performance and facilitate advanced analytical computations.
 
 
-## Demo
-
-A demo app is included to show how to use the project.
-
-To run the demo, follow these steps:
-
-(Add steps to start up the demo)
-
-1.
-2.
-3.
+| Demo | Platform | Description |
+| ---------- | -------- | ----------- |
+| [eShop](/eShop) | Windows | Learn how to implement cache-aside, session state and data store in an ASP.NET core web app |
 
 ## Resources
 
-(Any additional resources or related projects)
-
-- Link to supporting information
-- Link to similar sample
-- ...
+- [Azure Cache for Redis documentation](https://docs.microsoft.com/azure/azure-cache-for-redis)
