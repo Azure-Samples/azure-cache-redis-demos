@@ -1,18 +1,3 @@
----
-page_type: demo
-languages:
-- aspnetcore-csharp
-name: Azure Cache for Redis demos
-description: Learn how to use Azure Cache for cache-aside, session state, data store, and integration with other Azure services.
-products:
-- azure
-- aspnet-core
-- dotnet
-- azure-cache-redis
-- web-apps
-- entity-framework
----
-
 # Demos repository for Azure Cache for Redis
 
 This repository contains demos for best practices in various application scenarios. To find out more about the Azure Cache for Redis service, please visit the [documentation site](https://learn.microsoft.com/azure/azure-cache-for-redis/).
