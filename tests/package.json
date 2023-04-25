@@ -9,12 +9,6 @@
   "license": "ISC",
   "devDependencies": {
     "@playwright/test": "^1.32.3",
-    "csv-parse": "^5.3.4"
-  },
-  "dependencies": {
-    "dotenv": "^16.0.3",
-    "get-port": "^6.1.2",
-    "playwright": "^1.32.3",
-    "playwright-lighthouse": "^3.1.0"
+    "dotenv": "^16.0.3"
   }
 }
