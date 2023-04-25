@@ -33,6 +33,8 @@ The Playwright docs have more details here: [Using the Playwright VSCode Extensi
     # Credentials of test user    
     TESTUSERNAME = '' 
     TESTPASSWORD = ''
+    # IDs of products you want to test
+    PRODUCTIDS = ''
     ```
 
 1. Click on the `Testing` tab in VSCode's activity bar. This will show you all the tests in the project (in a tree structure).

@@ -11,4 +11,22 @@ test.describe('Shopping Cart', () => {
         await page.getByRole('cell', { name: 'Quantity' }).click();
         await page.getByRole('button', { name: 'Check Out' }).click();
     });
-});    
+});
+
+test.describe('Shopping Cart - Performance', () => {
+    test('should be able to add items to cart and measure shopping cart performance', async ({ page }) => {
+        // Product ID's to test
+        const products = process.env.PRODUCTIDS.split(',');
+        // Loop through each product and add to cart
+        for (const i of products) {
+            await page.goto(`/Home/Details/${i}`);
+            await page.getByRole('button', { name: 'Add to cart' }).click();
+        }
+        // Navigate to shopping cart and measure performance
+        await page.goto(`/Cart`);
+        const performanceTimingJson = await page.evaluate(() => JSON.stringify(window.performance.timing))
+        const performanceTiming = JSON.parse(performanceTimingJson)
+        const startToInteractive = performanceTiming.domInteractive - performanceTiming.navigationStart
+        console.log(`Navigation start to DOM interactive: ${startToInteractive}ms`)
+    });
+});
