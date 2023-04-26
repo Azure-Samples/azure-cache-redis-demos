@@ -27,6 +27,6 @@ test.describe('Shopping Cart - Performance', () => {
         const performanceTimingJson = await page.evaluate(() => JSON.stringify(window.performance.timing))
         const performanceTiming = JSON.parse(performanceTimingJson)
         const startToInteractive = performanceTiming.domInteractive - performanceTiming.navigationStart
-        console.log(`Navigation start to DOM interactive: ${startToInteractive}ms`)
+        test.info().annotations.push({ type: 'Performance', description: `Navigation start to DOM interactive: ${startToInteractive}ms` });
     });
 });
