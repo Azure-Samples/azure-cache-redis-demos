@@ -52,3 +52,20 @@ The Playwright docs have more details here: [Using the Playwright VSCode Extensi
 1. Then you can run a test in debug mode by clicking on the `Debug` button next to the test name in the tree structure.
 
 1. Once the breakpoint is hit, you can use the single-step through the code and inspect variables (Note: These debugging features are already built into VSCode, and aren't playwright specific. [More details](https://code.visualstudio.com/docs/editor/debugging)).
+
+## Measuring page performance
+
+In order to understand the impact that caching has on the site, we can use Playwright to measure performance.
+
+The [shopping-cart](tests/shopping-cart.authenticated.ts) spec has tests that go through 2 scenarios:
+
+* Add a list of items to the shopping cart, then view the shopping cart page. This would evaluate a validated cache.
+* Add a list of items to the shopping cart, edit product info as admin, then view the shopping cart page. This would evaluate an invalidated cache.
+
+We can use the built-in HTML report to understand test results.
+
+1. Open a cmd window and navigate to the `eShop/tests` folder.
+1. Run `npx playwright test -g 'Shopping Cart - Performance'`
+1. Run `npx playwright show-report` to launch the report.
+
+To compare different sites, we can open `eShop/tests/.env` and toggle the value of `BASEURL`.
