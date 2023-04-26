@@ -5,7 +5,6 @@
 /playwright-report/
 /playwright/.cache/
 /.auth/
-.env
 node_modules/
 /test-results/
 /playwright-report/
