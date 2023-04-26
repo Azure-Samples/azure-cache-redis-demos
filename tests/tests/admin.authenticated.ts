@@ -41,6 +41,6 @@ test.describe.serial('Admin - Create | Delete', () => {
     test('should be able to delete test product', async ({ page }) => {
         await page.goto('/products');
         await page.getByRole('row', { name: `${name} ¤${price} ${brand} ${image} ${category} Edit | Details | Delete` }).getByRole('link', { name: 'Delete' }).click();
-        await page.getByRole('button', { name: 'Delete' }).click(); 
+        await page.getByRole('button', { name: 'Delete' }).click();
     });
 });
