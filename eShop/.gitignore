@@ -1,7 +1,7 @@
 .vs
-eShop/bin
-eShop/obj/Debug
-eShop/obj/Release/
-eShop/eShop.csproj.user
-eShop/Properties/*
+bin
+obj/Debug
+obj/Release/
+eShop.csproj.user
+Properties/*
 

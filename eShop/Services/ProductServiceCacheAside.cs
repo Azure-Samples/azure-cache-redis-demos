@@ -9,6 +9,9 @@ using System.Text.Json;
 using eShop.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.CodeAnalysis;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Extensibility;
 
 namespace eShop.Services
 {
@@ -16,11 +19,13 @@ namespace eShop.Services
     {
         private readonly IDistributedCache _cache;
         private readonly eShopContext _context;
+        private readonly TelemetryClient _telemetryClient;
 
-        public ProductServiceCacheAside(IDistributedCache cache, eShopContext context) 
+        public ProductServiceCacheAside(IDistributedCache cache, eShopContext context, TelemetryClient telemetryClient) 
         { 
             _cache = cache;
             _context = context;
+            _telemetryClient = telemetryClient;
         }
 
         public async Task AddProduct(Product product)
@@ -71,27 +76,29 @@ namespace eShop.Services
 
         public async Task<List<Product>> GetAllProductsAsync()
         {
-            var stringFromCache = await _cache.GetStringAsync(CacheKeyConstants.AllProductKey);
-            if (stringFromCache.IsNullOrEmpty())
+            using (var operation = _telemetryClient.StartOperation<DependencyTelemetry>("AzureCacheForRedis"))
             {
-                if (_context.Product == null) throw new Exception("Entity set 'eShopContext.Product'  is null.");
-                List<Product> AllProductList = await Task.Run(() => _context.Product.ToList());
-                var options = new DistributedCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromDays(30)).SetAbsoluteExpiration(TimeSpan.FromDays(30));
-                string AllProductString = ConvertData<Product>.ObjectListToString(AllProductList);
-                await _cache.SetStringAsync(CacheKeyConstants.AllProductKey, AllProductString, options);
-                return ConvertData<Product>.StringToObjectList(AllProductString);
+                var byteArrayFromCache = await _cache.GetAsync(CacheKeyConstants.AllProductKey);
+                if (byteArrayFromCache.IsNullOrEmpty())
+                {
+                    if (_context.Product == null) throw new Exception("Entity set 'eShopContext.Product'  is null.");
+                    List<Product> AllProductList = await Task.Run(() => _context.Product.ToList());
+                    var options = new DistributedCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromDays(30)).SetAbsoluteExpiration(TimeSpan.FromDays(30));
+                    byte[] AllProductByteArray = ConvertData<Product>.ObjectListToByteArray(AllProductList);
+                    await _cache.SetAsync(CacheKeyConstants.AllProductKey, AllProductByteArray, options);
+                    return AllProductList;
+                }
+
+
+                return ConvertData<Product>.ByteArrayToObjectList(byteArrayFromCache);
             }
 
-
-            return ConvertData<Product>.StringToObjectList(stringFromCache);
-
-            //return await _context.Product.ToListAsync();
          }
 
         public async Task<Product?> GetProductByIdAsync(int productId)
         {
-            var stringFromCache = await _cache.GetStringAsync(CacheKeyConstants.ProductPrefix + productId);
-            if (stringFromCache.IsNullOrEmpty())
+            var byteArrayFromCache = await _cache.GetAsync(CacheKeyConstants.ProductPrefix + productId);
+            if (byteArrayFromCache.IsNullOrEmpty())
             {
                 var productById = await Task.Run(() => _context.Product.Where(product => product.Id == productId).FirstOrDefault());
                 if (productById == null)
@@ -99,12 +106,12 @@ namespace eShop.Services
                     return null;
                 }
                 var options = new DistributedCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromDays(30)).SetAbsoluteExpiration(TimeSpan.FromDays(30));
-                string ProductByIdString = ConvertData<Product>.ObjectToString(productById);
-                await _cache.SetStringAsync(CacheKeyConstants.ProductPrefix + productId, ProductByIdString, options);
-                return ConvertData<Product>.StringToObject(ProductByIdString);
+                byte[] ProductByIdByteArray = ConvertData<Product>.ObjectToByteArray(productById);
+                await _cache.SetAsync(CacheKeyConstants.ProductPrefix + productId, ProductByIdByteArray, options);
+                return productById;
             }
 
-            return ConvertData<Product>.StringToObject(stringFromCache);
+            return ConvertData<Product>.ByteArrayToObject(byteArrayFromCache);
         }
 
         private bool ProductExists(int id)
