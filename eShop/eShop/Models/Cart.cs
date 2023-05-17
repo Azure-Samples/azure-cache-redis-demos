@@ -1,50 +1,42 @@
-﻿namespace eShop.Models;
+﻿using System.Linq;
+
+namespace eShop.Models;
 
 [Serializable]
-public class Cart:BaseEntity
+public class Cart
 {
-    public string BuyerId { get; private set; }
-    private readonly List<CartItem> _items = new List<CartItem>();
-    public IReadOnlyCollection<CartItem> Items => _items.AsReadOnly();
-
-
-    public int TotalItems => _items.Sum(i => i.Quantity);
+    public int Id { get; set; }
+    public string BuyerId { get; set; }
+    public IAsyncEnumerable<CartItem> _items { get; set; }
+    public int TotalItems => _items.SumAsync(i => i.Quantity).Result;
 
     public Cart(string buyerId)
     {
         BuyerId = buyerId;
     }
 
-
-    public void AddItem(int itemId, decimal unitPrice, int quantity = 1)
+    public async Task AddItemAsync(int itemId, decimal unitPrice, int quantity = 1)
     {
-        if (!Items.Any(i => i.ItemId == itemId))
+        var existingItem = await _items.FirstOrDefaultAsync(i => i.ItemId == itemId);
+        if (existingItem == null)
         {
-            _items.Add(new CartItem(itemId, quantity, unitPrice));
-            return;
+            var newItem = new CartItem(itemId, quantity, unitPrice);
+            _items = _items.Append(newItem);
         }
-        var existingItem = Items.First(i => i.ItemId == itemId);
-        existingItem.AddQuantity(quantity);
+        else
+        {
+            existingItem.AddQuantity(quantity);
+        }
     }
 
-    public void CopyItem(CartItem item)
+    public async Task CopyItemAsync(CartItem item)
     {
-        _items.Add(item);
+        _items = _items.Append(item);
     }
 
-    public void RemoveEmptyItems()
+    public async Task RemoveEmptyItemsAsync()
     {
-        _items.RemoveAll(i => i.Quantity == 0);
+        var nonEmptyItems = await _items.Where(i => i.Quantity > 0).ToListAsync();
+        _items = nonEmptyItems.ToAsyncEnumerable();
     }
-
-    public void SetNewBuyerId(string buyerId)
-    {
-        BuyerId = buyerId;
-    }
-
-    public void setId(int id)
-    { 
-        this.Id = id;
-    }
-
 }

@@ -1,61 +1,45 @@
 ﻿using eShop.Models;
 using System.Text.Json;
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 
 namespace eShop.Helpers
 {
     public static class ConvertData<T>
     {
-        public static List<T> ByteArrayToObjectList(byte[] inputByteArray)
+        public static async IAsyncEnumerable<T> ByteArrayToObjectList(byte[] inputByteArray)
         {
-            var deserializedList = JsonSerializer.Deserialize<List<T>>(inputByteArray);
-            return deserializedList;
+            IAsyncEnumerable<T> deserializedList = JsonSerializer.DeserializeAsyncEnumerable<T>(new MemoryStream(inputByteArray));
+            //return deserializedList;
+            await foreach (T _item in deserializedList)
+            {
+                yield return _item;
+            }
         }
 
-        public static byte[] ObjectListToByteArray(List<T> inputList)
+        public static async Task<byte[]> ObjectListToByteArray(List<T> inputList)
         {
-            var bytes = JsonSerializer.SerializeToUtf8Bytes(inputList);
-
-            return bytes;
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                await JsonSerializer.SerializeAsync(memoryStream, inputList);
+                return memoryStream.ToArray();
+            }
+                        
         }
 
-        public static T ByteArrayToObject(byte[] inputByteArray)
+        public static async Task<T> ByteArrayToObject(byte[] inputByteArray)
         {
-            var deserializedList = JsonSerializer.Deserialize<T>(inputByteArray);
-            return deserializedList;
+            return await JsonSerializer.DeserializeAsync<T>(new MemoryStream(inputByteArray));
         }
 
-        public static byte[] ObjectToByteArray(T input)
+        public static async Task<byte[]> ObjectToByteArray(T input)
         {
-            var bytes = JsonSerializer.SerializeToUtf8Bytes(input);
-
-            return bytes;
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                await JsonSerializer.SerializeAsync(memoryStream, input);
+                return memoryStream.ToArray();
+            }
         }
 
-        public static List<T> StringToObjectList(string inputString)
-        {
-            var deserializedList = JsonSerializer.Deserialize<List<T>>(inputString);
-            return deserializedList;
-        }
-
-        public static string ObjectListToString(List<T> inputList)
-        {
-            var _returnString = JsonSerializer.Serialize(inputList);
-
-            return _returnString;
-        }
-
-        public static T StringToObject(string inputString)
-        {
-            var deserializedList = JsonSerializer.Deserialize<T>(inputString);
-            return deserializedList;
-        }
-
-        public static string ObjectToString(T input)
-        {
-            var _returnString = JsonSerializer.Serialize(input);
-
-            return _returnString;
-        }
     }
 }

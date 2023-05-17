@@ -2,6 +2,8 @@
 using eShop.Helpers;
 using eShop.Interfaces;
 using eShop.Models;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -11,105 +13,67 @@ namespace eShop.Services
     public class CartServiceCache : ICartService
     {
         private readonly IDistributedCache _cache;
+        private readonly TelemetryClient _telemetryClient;
 
 
-        public CartServiceCache(IDistributedCache cache)
+        public CartServiceCache(IDistributedCache cache, TelemetryClient telemetryClient)
         {
             _cache = cache;
+            _telemetryClient = telemetryClient;
         }
 
-        public async Task<Cart> AddItemToCart(string username, int itemId, decimal price, int quantity = 1)
+        public async Task AddItem(string username, int itemId, decimal price, int quantity = 1)
         {
-            var options = new DistributedCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromDays(14)).SetAbsoluteExpiration(TimeSpan.FromDays(14));
-            string cartItemListString = await _cache.GetStringAsync(CacheKeyConstants.GetCartItemListKey(username));
-            int _cartId;
+            var options = new DistributedCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(2));
+            byte[] cartItemListByteArray = await _cache.GetAsync(GetCartItemListKey(username));
 
-            if (cartItemListString.IsNullOrEmpty()) 
+            if (cartItemListByteArray.IsNullOrEmpty()) 
             {
-                _cartId = await generateCartId();
-
-                await _cache.SetStringAsync(_cartId.ToString(), username, options);
-                await _cache.SetStringAsync(username, _cartId.ToString(), options);
                 List<CartItem> cartItemList = new List<CartItem>();
                 CartItem cartItemToAdd = new CartItem(itemId, quantity, price);
-                cartItemToAdd.SetCartId(_cartId);
                 cartItemList.Add(cartItemToAdd);
-                string newCartItemString = ConvertData<CartItem>.ObjectListToString(cartItemList);
-                await _cache.SetStringAsync(CacheKeyConstants.GetCartItemListKey(username),newCartItemString, options);
+                byte[] newCartItemByteArray = await ConvertData<CartItem>.ObjectListToByteArray(cartItemList);
+                await _cache.SetAsync(GetCartItemListKey(username),newCartItemByteArray, options);
             }
             else 
             {
-                List<CartItem> cartItemList = ConvertData<CartItem>.StringToObjectList(cartItemListString);
+                List<CartItem> cartItemList = await ConvertData<CartItem>.ByteArrayToObjectList(cartItemListByteArray).ToListAsync();
                 CartItem cartItem = cartItemList.Where(item => item.ItemId == itemId).FirstOrDefault();
                 if (cartItem != null)
                 {
                     CartItem newCartItem = new CartItem(itemId, cartItem.Quantity+1, price);
-                    _cartId = cartItem.Id;
                     cartItemList.Remove(cartItem);
                     cartItemList.Add(newCartItem);
                 }
                 else
                 {
                     CartItem newCartItem = new CartItem(itemId, 1, price);
-                    string cartIdString = await _cache.GetStringAsync(username);
-                    if(cartIdString != null)
-                    {
-                        int cartId = Int32.Parse(cartIdString);
-                        newCartItem.SetCartId(cartId);
-                    }
-
-                    _cartId = newCartItem.CartId;
 
                     cartItemList.Add(newCartItem);
                 }
 
-                string CartItemListToUpdateString = ConvertData<CartItem>.ObjectListToString(cartItemList);
-                await _cache.SetStringAsync(CacheKeyConstants.GetCartItemListKey(username), CartItemListToUpdateString, options);
+                byte[] CartItemListToUpdateByteArray = await ConvertData<CartItem>.ObjectListToByteArray(cartItemList);
+                await _cache.SetAsync(GetCartItemListKey(username), CartItemListToUpdateByteArray, options);
             }
-
-            Cart _cart = new Cart(username);
-            _cart.setId(_cartId);
-            return _cart;
         }
 
-        public async Task DeleteCartAsync(int cartId)
+        public async Task DeleteCart(string username)
         {
-            string username = await _cache.GetStringAsync(cartId.ToString());
 
             if (username == null)
             {
                 return;
             }
-            await _cache.RemoveAsync(cartId.ToString());
-            await _cache.RemoveAsync(username);
-            await _cache.RemoveAsync(CacheKeyConstants.GetCartItemListKey(username));
+
+            await _cache.RemoveAsync(GetCartItemListKey(username));
         }
 
-        public async Task<Cart?> GetCartAsync(string username)
+        public async Task<Cart?> GetCart(string username)
         {
-            Cart cart = new Cart(username);
-            string cartIdString = await _cache.GetStringAsync(username);
-            if (cartIdString == null)
-            {
-                return null;
-            }
 
-            int cartId = Int32.Parse(cartIdString);
-            cart.setId(cartId);
+            throw new NotImplementedException();
 
-            return cart;
 
-        }
-
-        public async Task<int> GetCartId(Cart cart)
-        {
-            string username = cart.BuyerId.ToString();
-
-            string cartIdString = await _cache.GetStringAsync(username);
-
-            int cartId = Int32.Parse(cartIdString);
-
-            return cartId;
         }
 
         public Task<Cart> SetQuantities(int cartId, Dictionary<string, int> quantities)
@@ -117,41 +81,69 @@ namespace eShop.Services
             throw new NotImplementedException();
         }
 
-        public async Task TransferCartAsync(string anonymousName, string userName)
+        public async Task TransferCart(string anonymousName, string userName)
         {
-            var options = new DistributedCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromDays(14)).SetAbsoluteExpiration(TimeSpan.FromDays(14));
+            var options = new DistributedCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(2));
 
-            string anonymousId = await _cache.GetStringAsync(anonymousName);
-            if(anonymousId.IsNullOrEmpty())
-            { 
-                return; 
-            }
-            string cartItemListString = await _cache.GetStringAsync(CacheKeyConstants.GetCartItemListKey(anonymousName));
-            if (!cartItemListString.IsNullOrEmpty())
+            
+            byte[] cartItemListByteArray = await _cache.GetAsync(GetCartItemListKey(anonymousName));
+            if (cartItemListByteArray.IsNullOrEmpty())
             {
-                await _cache.SetStringAsync(CacheKeyConstants.GetCartItemListKey(userName), cartItemListString, options);
-                await _cache.SetStringAsync(anonymousId, userName);
-                await _cache.SetStringAsync(userName, anonymousId);
-
+                return;
             }
 
-            await _cache.RemoveAsync(anonymousName);
-            await _cache.RemoveAsync(CacheKeyConstants.GetCartItemListKey(anonymousName));
+            else 
+            {
+                await _cache.SetAsync(GetCartItemListKey(userName), cartItemListByteArray, options);
+            }
+
+            await _cache.RemoveAsync(GetCartItemListKey(anonymousName));
+        }
+
+        public async IAsyncEnumerable<CartItem>? GetCartItems(string username)
+        {
+
+            if (username == null)
+            {
+                yield break;
+            }
+            byte[] cartItemslist = await _cache.GetAsync(GetCartItemListKey(username));
+
+            if (cartItemslist.IsNullOrEmpty())
+            {
+                yield break;
+            }
+            else 
+            {
+                await foreach (CartItem _cartItem in ConvertData<CartItem>.ByteArrayToObjectList(cartItemslist))
+                {
+                    yield return _cartItem;
+                }
+            }
+
+
         }
 
         private async Task<int> generateCartId()
         {
             var rand = new Random();
-            int cardId = rand.Next();
+            int cartId;
+            string userName;
 
-            string username = "placeholder";
-
-            while (!username.IsNullOrEmpty()) 
+            do
             {
-                username = await _cache.GetStringAsync(cardId.ToString());
-            }
+                cartId = rand.Next();
+                userName = await _cache.GetStringAsync(cartId.ToString());
+            } 
+            while (!userName.IsNullOrEmpty());
 
-            return cardId;
+            return cartId;
         }
+
+        private string GetCartItemListKey(string userName)
+        {
+            return "cartItemList_&_" + userName;
+        }
+
     }
 }

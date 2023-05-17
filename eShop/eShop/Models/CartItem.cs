@@ -3,19 +3,19 @@
 namespace eShop.Models;
 
 [Serializable]
-public class CartItem : BaseEntity
+public class CartItem 
 {
-    public decimal UnitPrice { get; private set; }
-    public int Quantity { get; private set; }
-    public int ItemId { get; private set; }
-    //public int CartId { get; private set; }
-    public int CartId { get; set; }
+    public int Id { get; set; }
+    public decimal UnitPrice { get; set; }
+    public int Quantity { get; set; }
+    public int ItemId { get; set; }
+    public string? CartId { get; set; }
 
     public CartItem(int itemId, int quantity, decimal unitPrice)
     {
         ItemId = itemId;
         UnitPrice = unitPrice;
-        SetQuantity(quantity);
+        Quantity = quantity;
     }
 
     public void AddQuantity(int quantity)
@@ -23,14 +23,5 @@ public class CartItem : BaseEntity
         Quantity += quantity;
     }
 
-    public void SetQuantity(int quantity)
-    {
-        Quantity = quantity;
-    }
-
-    public void SetCartId(int _cardId)
-    {
-        CartId = _cardId;
-    }
 
 }
