@@ -4,7 +4,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace eShop.Models;
 
-[Serializable]
 public class Product
 {
     public int Id { get; set; }
@@ -25,3 +24,8 @@ public class Product
     public string? category { get; set; }
 }
 
+public enum Categories
+{ 
+    Purse,
+    Shoes
+}

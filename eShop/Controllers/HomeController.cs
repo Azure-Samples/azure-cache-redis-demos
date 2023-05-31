@@ -2,11 +2,10 @@
 using eShop.Interfaces;
 using eShop.Models;
 using eShop.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.Elfie;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
-using System.Linq;
 
 namespace eShop.Controllers
 {
@@ -24,15 +23,19 @@ namespace eShop.Controllers
 
         public async Task<IActionResult> IndexAsync()
         {
+            Stopwatch sw = Stopwatch.StartNew();
 
-            List<Product> productList = await _productService.GetAllProductsAsync().ToListAsync();
-            
+            List<Product> productList = await _productService.GetAllProductsAsync();
+
+
+
             var _lastViewedId = HttpContext.Session.GetInt32(SessionConstants.LastViewed);
 
             if (_lastViewedId != null)
             {
-                var _lastViewedProduct = await _productService.GetProductByIdAsync((int) _lastViewedId);
-                if( _lastViewedProduct != null )
+                //var _lastViewedProduct = await _productService.GetProductByIdAsync((int)_lastViewedId);
+                var _lastViewedProduct = productList.Where(_product => _product.Id == _lastViewedId).FirstOrDefault();
+                if (_lastViewedProduct != null)
                 {
                     ViewData["lastViewedName"] = _lastViewedProduct.Name;
                     ViewData["lastViewedBrand"] = _lastViewedProduct.Brand;
@@ -43,28 +46,12 @@ namespace eShop.Controllers
                 }
             }
 
-            //var userOrSessionName = Request.HttpContext.User.Identity.IsAuthenticated? Request.HttpContext.User.Identity.Name : Guid.NewGuid().ToString();
-            //var userOrSessionName = "";
-            //if (Request.HttpContext.User.Identity.IsAuthenticated)
-            //{
-            //    userOrSessionName = Request.HttpContext.User.Identity.Name;
-            //}
-            //else if (Request.Cookies.ContainsKey(Constants.UNIQUE_CACHE_TAG))
-            //{
-            //    userOrSessionName = Request.Cookies[Constants.UNIQUE_CACHE_TAG];
-            //}
-            //else 
-            //{ 
-            //    userOrSessionName = Guid.NewGuid().ToString();
-            //    var cookieOptions = new CookieOptions { IsEssential = true };
-            //    Response.Cookies.Append(Constants.UNIQUE_CACHE_TAG, userOrSessionName, cookieOptions);
-            //}
+            sw.Stop();
+            double ms = sw.ElapsedTicks / (Stopwatch.Frequency / (1000.0));
 
+            ViewData["pageLoadTime"] = ms;
 
-            //ViewData["userUniqueShoppingKey"] = userOrSessionName;
-
-
-            return View(productList);
+            return View(productList) ;
         }
 
         public IActionResult Privacy()
