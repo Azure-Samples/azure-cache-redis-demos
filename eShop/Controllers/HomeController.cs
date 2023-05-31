@@ -23,7 +23,6 @@ namespace eShop.Controllers
 
         public async Task<IActionResult> IndexAsync()
         {
-            Stopwatch sw = Stopwatch.StartNew();
 
             List<Product> productList = await _productService.GetAllProductsAsync();
 
@@ -45,11 +44,6 @@ namespace eShop.Controllers
                     ViewData["_price"]=_lastViewedProduct.Price;
                 }
             }
-
-            sw.Stop();
-            double ms = sw.ElapsedTicks / (Stopwatch.Frequency / (1000.0));
-
-            ViewData["pageLoadTime"] = ms;
 
             return View(productList) ;
         }
