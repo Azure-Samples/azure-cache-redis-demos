@@ -3,7 +3,6 @@ using eShop.Models;
 using eShop.ViewModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics;
 
 namespace eShop.Controllers
@@ -12,40 +11,46 @@ namespace eShop.Controllers
     {
         private readonly ICartService _cartService;
         private readonly IProductService _productService;
+        private readonly ICartItemService _cartItemService;
+        // GET: CartsController
 
-        public CartsController(ICartService cartService, IProductService productService)
+        public CartsController(ICartService cartService, IProductService productService, ICartItemService cartItemService)
         { 
             _cartService = cartService;
             _productService = productService;
+            _cartItemService = cartItemService;
         }
         
         public async Task<ActionResult> Index()
         {
+            Stopwatch sw = Stopwatch.StartNew();
 
             List<ShoppingCartItem> ShoppingList = new List<ShoppingCartItem>();
-
-            string username = GetOrSetBasketCookieAndUserName();
-            List<CartItem> CartItemList = await _cartService.GetCartItems(username).ToListAsync();
-
-            if (CartItemList.IsNullOrEmpty())
+            var cart = await _cartService.GetCartAsync(GetOrSetBasketCookieAndUserName());
+            if (cart == null)
             {
                 return View(ShoppingList);
             }
-            else 
+
+            
+            List<CartItem> CartItemList = await _cartItemService.GetCartItemAsync(cart.Id);
+
+            foreach (var item in CartItemList)
             {
-                foreach (var item in CartItemList)
+                var product = await _productService.GetProductByIdAsync(item.ItemId);
+                if (product == null)
                 {
-                    var product = await _productService.GetProductByIdAsync(item.ItemId);
-                    if (product == null)
-                    {
-                        return View();
-                    }
-                    ShoppingList.Add(new ShoppingCartItem { Name=product.Name, Price=product.Price, Quantity=item.Quantity, CartId=username });
+                    return View();
                 }
-
-                return View(ShoppingList);
+                ShoppingList.Add(new ShoppingCartItem { Name=product.Name, Price=product.Price, Quantity=item.Quantity, CartId=cart.Id });
             }
 
+            sw.Stop();
+            double ms = sw.ElapsedTicks / (Stopwatch.Frequency / (1000.0));
+
+            ViewData["cartLoadTime"] = ms;
+
+            return View(ShoppingList);
         }
 
         // GET: CartsController/Details/5
@@ -60,16 +65,32 @@ namespace eShop.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Product productDetails)
         {
+            Stopwatch sw = Stopwatch.StartNew();
             if (productDetails?.Id == null)
             {
                 return RedirectToAction("Index","Home");
             }
 
+            var item = await _productService.GetProductByIdAsync(productDetails.Id);
+            if (item == null)
+            {
+                ViewData["messageFailed"] = "Failed to add item - not found";
+                return RedirectToAction("Index", "Home");
+            }
 
             var username = GetOrSetBasketCookieAndUserName();
-            await _cartService.AddItem(username, productDetails.Id, productDetails.Price);
+            var cart = await _cartService.AddItemToCart(username,
+                productDetails.Id, item.Price);
 
-            return View(productDetails);
+
+            sw.Stop();
+            double ms = sw.ElapsedTicks / (Stopwatch.Frequency / (1000.0));
+
+            ViewData["AddToCartTimeMS"] = ms;
+            ViewData["messageSuccess"] = $"Successful - added item {item.Name} ";
+
+            return View(item);
+            //return RedirectToAction("Index", "Home");
         }
 
         // GET: CartsController/Edit/5
@@ -97,10 +118,15 @@ namespace eShop.Controllers
         // POST: CartsController/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Delete(string CartId)
+        public async Task<ActionResult> Delete(int CartId)
         {
-            await _cartService.DeleteCart(CartId);
+            Stopwatch sw = Stopwatch.StartNew();
+            await _cartService.DeleteCartAsync(CartId);
 
+            sw.Stop();
+            double ms = sw.ElapsedTicks / (Stopwatch.Frequency / (1000.0));
+
+            ViewData["cartDeleteTime"] = ms;
 
             return View();
             

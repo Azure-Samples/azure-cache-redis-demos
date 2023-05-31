@@ -1,15 +1,14 @@
 # eShop
 
 An online shopping Web App in ASP.NET core to showcase Azure Cache for Redis by implementing cache-aside pattern, session store, and data store using it. 
+**This is the version of the web application without cache to compare performance with the version that uses Azure Cache for Redis (the main branch)**
 
 ## Features
 
 This project framework provides the following features:
 
-* Using cache for cache-aside pattern on product list to accelerate databases performance
-* Distributed Cache tag helper on .cshtml to save CPU used in rendering view.
-* Using cache as session store on last view item and shopping time
-* Using cache as data-store for shopping cart
+* Viewing product list in the homepage of the web app
+* Shopping cart
 * User management:
     - Individual User authentication
     - RBAC authorization
@@ -20,26 +19,19 @@ This project framework provides the following features:
 
 - .NET 7, ASP.NET core 7 or above
 
-### Installation
-
-- Create an Azure Redis Cache and obtain the connection string. [Instruction](https://learn.microsoft.com/azure/azure-cache-for-redis/quickstart-create-redis)
 
 ### Quickstart - running the project locally with an instance of Azure Cache for Redis in your Azure subscription
 
 1. Obtain the sample code.
-    * Download zip. Extract the .zip file
-    * or "git clone https://github.com/Azure-Samples/azure-cache-redis-demos.git" in Git command interface. Install Git if needed: [Git Downloads](https://git-scm.com/downloads)
+    * Change to the no-cache branch. Download zip. Extract the .zip file
+    * or "git clone -b no-cache https://github.com/Azure-Samples/azure-cache-redis-demos.git" in Git command interface. Install Git if needed: [Git Downloads](https://git-scm.com/downloads)
 2. Open a command line interface. Change to the project directory that contains the .csproj file: 
-    * cd <Path_to_downloaded_code>/eShop/eShop
+    * cd <Path_to_downloaded_code>/eShop/
 3. Initialize user secrets for development environment:
 ```
     dotnet user-secrets init
 ```
-4. Obtain an instance of Azure Cache for Redis: [Quickstart: Create an open-source Redis cache](https://learn.microsoft.com/azure/azure-cache-for-redis/quickstart-create-redis)
-5. Save Redis Cache connection string to User Secrets:
-``` 
-dotnet user-secrets set "ConnectionStrings:eShopRedisConnection" "your_cache_connectionstring"
-```
+
 6. Entity Framework migration to create database tables for user, products, and shopping cart items:
 ``` 
     dotnet ef migrations add <enter_a_name_for_Migration> --context eShopContext
@@ -59,8 +51,7 @@ dotnet user-secrets set "ConnectionStrings:eShopRedisConnection" "your_cache_con
 ## Deploy the project to Azure
 1. **Create Azure Resources** 
 
-    Create Azure Web App, Azure SQL database, and Azure Cache for Redis instance from https://aka.ms/redis-cache/webapptemplate. Select 'Yes' to add Azure Cache for Redis.
-    ![Create Web App, Database, and Cache](./screenshots/create-webapp-database-cache.png)
+    Create Azure Web App and Azure SQL database from https://aka.ms/redis-cache/webapptemplate. Select 'No' to add Azure Cache for Redis.
 
 2. **Configure SQL Server firewall rules**
     
@@ -125,7 +116,6 @@ dotnet user-secrets set "ConnectionStrings:eShopRedisConnection" "your_cache_con
     
     * DefaultConnection: <your_Azure_SQL_ConnectionString>
     * eShopContext: <your_Azure_SQL_ConnectionString>
-    * eShopRedisConnection: <your_Azure_Cache_ConnectionString>
 
     The Connection Strings section should contain the following once done:
 
