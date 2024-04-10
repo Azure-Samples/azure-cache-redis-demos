@@ -18,7 +18,10 @@ This project framework provides the following features:
 
 ### Prerequisites
 
-- .NET 7, ASP.NET core 7 or above
+- Azure subscription. [Start free](https://azure.microsoft.com/free)
+- .NET 8 or above. [Download](https://dotnet.microsoft.com/download/dotnet/8.0)
+- Azure Developer CLI. [Install](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd?tabs=winget-windows%2Cbrew-mac%2Cscript-linux&pivots=os-windows)
+- (optional) Visual Studio. [Download](https://visualstudio.microsoft.com/)
 
 ### Installation
 
@@ -57,83 +60,26 @@ dotnet user-secrets set "ConnectionStrings:eShopRedisConnection" "your_cache_con
 9. Next step,  follow the **Deploy the proejct to Azure** section below to run your web application in the Cloud.
 
 ## Deploy the project to Azure
-1. **Create Azure Resources** 
-
-    Create Azure Web App, Azure SQL database, and Azure Cache for Redis instance from https://aka.ms/redis-cache/webapptemplate. Select 'Yes' to add Azure Cache for Redis.
-    ![Create Web App, Database, and Cache](./screenshots/create-webapp-database-cache.png)
-
-2. **Configure SQL Server firewall rules**
-    
-    Add firewall rule to the database for running entity framework migrations. Navigate to the SQL server in Azure portal. Click the Networking tab. Under firewall rules click **+ Add your client IPv4 address**. This is a one time effort and the rule can be removed after use. 
-    ![Add SQL Server firewall rules](./screenshots/add-sqlserver-firewallrules.png)
-
-3. **Fork the Sample Repository**
-
-    You may have obtained the sample code when running locally. But for securely and successfully deploying the app to Azure, you need to fork the sample into your own Github account so the Github actions can be configured for a secure deployment process.
-
-    ![Fork Github demo repository](./screenshots/Fork-repositoy.png)
-    
-4. **Add user secrets for database connection strings**
-
-    Initialize dotnet user-secrets if you have not yet:
+1. Open a command prompt
+2. Change directory to the project folder where azure.yaml file is located
+3. Run:
     ```
-    dotnet user-secrets init
+    azd up
     ```
+4. Follow command prompt to enter environment name and select subscription
+5. This will create all the resources needed to run the sample:
+- Azure App Services Web App
+- Azure Cache for Redis
+- Azure SQL server and databases
+- VNET and subnets for security
+- private endpoints for connecting the resources to the subnets
 
-    Obtain database connection string from Azure Portal, Web App Configurations page | Connection Strings section. The Azure Marketplace quick start deployment automatically added the connection string with name **AZURE_SQL_CONNECTIONSTRING**. Edit to copy the value
+6. The azd commands do not do Entity Framework Migration. Repeat the section above for running EF migrations on the databases from your local development machine. Add firewall rules to the SQL database if you experience connection errors due to public access not allowed.
 
-    Run the following commands to add user secrets:
+7. To clean up the environment, run 
     ```
-    dotnet user-secrets add "ConnectionStrings:DefaultConnection" "your_connection_string"
-
-    dotnet user-secrets add "ConnectionStrings:eShopContext" "your_connection_string"
+    azd down
     ```
-
-5. **Run Entity Framework Migrations to create database tables**
-
-    Open a command prompt. Change to the eShop project folder directory with the .csproj file. Run the following commands.
-    ``` 
-    dotnet ef migrations add <enter_a_name_for_Migration> --context eShopContext
-    dotnet ef migrations add <enter_a_name_for_Migration> --context ApplicationDbContext
-    dotnet ef database update --context eShopContext
-    dotnet ef database update --context ApplicationDbContext
-    ```
-
-    After these steps, you can delete the firewall rule on the Azure SQL Server fo security best practices. 
-
-6. **Edit the Github workflow file to deploy the project to Azure**
-
-    Open the .github/workflows folder. In the last action **deploy-to-webapp** section, there is an **app-name** property. Change it to the name of your web app, less the domain.
-
-    ![Edit workflow appname](./screenshots/edit-workflow-appname.png)
-
-7. **Add AAD credential in the Repository secrets**
-
-    Follow instructions at [Use the Azure login action with a service principal secret](https://learn.microsoft.com/azure/developer/github/connect-from-azure?tabs=azure-portal%2Cwindows#use-the-azure-login-action-with-a-service-principal-secret) to:
-    * create a service principal that access access to your resource group
-    * add a secret in your git repository for the workflow file to login and deploy code to your resources
-
-    ![Git action for login to Azure](./screenshots/login-gitaction-creds.png)
-
-8. **Trigger workflow file to deploy the project to Azure**
-
-    Check in the changes to the workflow file. The workflow file will be triggered to deploy the code to your Web App.
-
-9. **Configure environment variables in the Web App Configuration**
-
-    Go to the your Web App in Azure Portal. Browse to **Configuration | ConnectionStrings** section. The quick start deployment template generated AZURE_SQL_CONNECTIONSTRING and AZURE_CACHE_CONNECTIONSTRING settings. Recreate to match what we used in the project code:
-    
-    * DefaultConnection: <your_Azure_SQL_ConnectionString>
-    * eShopContext: <your_Azure_SQL_ConnectionString>
-    * eShopRedisConnection: <your_Azure_Cache_ConnectionString>
-
-    The Connection Strings section should contain the following once done:
-
-    ![Configure Connection Strings for the Web App](./screenshots/configure-connectionstrings.png)
-
-10. **Browse to your web app to try the features**
-    
-    Next step, follow the Demo section below to try out the web app. If you want to jump directly to view the performance, go to Load test the web application performance section directly.
 
 
 ## Demo
